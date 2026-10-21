@@ -5,7 +5,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc -p .",
-    "fixtures": "python3 -I scripts/extract_fixtures.py"
+    "fixtures": "python3 -I scripts/extract_fixtures.py",
+    "test:db": "sh db-test/run.sh"
   },
   "author": "",
   "license": "ISC",
