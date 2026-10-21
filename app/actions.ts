@@ -34,3 +34,18 @@ export async function submitRequest(form: FormData) {
   revalidatePath("/me/attendance");
   redirect(`${back}&msg=${encodeURIComponent("申請しました。承認されると勤怠に反映されます。")}`);
 }
+
+export async function changePassword(form: FormData) {
+  const password = String(form.get("password") ?? "");
+  if (password.length < 8) redirect(`/me/password?msg=${encodeURIComponent("8文字以上にしてください")}`);
+  if (password !== form.get("confirm")) redirect(`/me/password?msg=${encodeURIComponent("2回の入力が一致しません")}`);
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+  redirect(`/me/password?msg=${encodeURIComponent(error ? `変更できませんでした: ${error.message}` : "変更しました。次回から新しいパスワードでログインしてください。")}`);
+}
+
+export async function logout() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
+}
