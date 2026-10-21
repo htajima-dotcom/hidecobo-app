@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Role } from "@/lib/me";
+import { logout } from "./actions";
 
 export function TopBar({ name, role }: { name: string | null | undefined; role: Role | null }) {
   return (
@@ -12,7 +13,13 @@ export function TopBar({ name, role }: { name: string | null | undefined; role: 
         {role === "accounting" || role === "admin" ? <Link href="/accounting">経理</Link> : null}
         {role === "admin" ? <Link href="/admin">管理</Link> : null}
       </nav>
-      <span className="muted">{name}</span>
+      <details className="menu">
+        <summary className="muted">{name}</summary>
+        <div>
+          <Link href="/me/password">パスワード変更</Link>
+          <form action={logout}><button className="link">ログアウト</button></form>
+        </div>
+      </details>
     </header>
   );
 }

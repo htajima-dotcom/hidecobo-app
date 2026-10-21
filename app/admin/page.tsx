@@ -22,6 +22,7 @@ export default async function AdminHome() {
           <Link className="button" href="/admin/requests">申請の承認{pending ? `（${pending}件）` : ""}</Link>
           <Link className="button" href="/admin/payroll">給与計算</Link>
           <Link className="button" href="/accounting">経理（給与仕訳）</Link>
+          <Link className="button" href="/admin/members">ログインできる人</Link>
         </div>
 
         <h2>今日の出勤状況（{today.replace(/-/g, "/")}）</h2>

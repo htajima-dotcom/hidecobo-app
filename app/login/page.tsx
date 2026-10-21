@@ -1,36 +1,36 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-// 社長が招待したメールアドレスにだけログイン用のリンクを送る（新規登録はできない）
+// 権限者が登録したメールアドレスと、渡された仮パスワードでログインする（新規登録はできない）
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
-  const [state, setState] = useState<"idle" | "sent" | "error">("idle");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(false);
+  const [pending, setPending] = useState(false);
 
-  async function send(e: React.FormEvent) {
+  async function login(e: React.FormEvent) {
     e.preventDefault();
-    const { error } = await createClient().auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false, emailRedirectTo: `${location.origin}/auth/callback` },
-    });
-    setState(error ? "error" : "sent");
+    setPending(true);
+    const { error } = await createClient().auth.signInWithPassword({ email, password });
+    setPending(false);
+    if (error) return setError(true);
+    router.replace("/");
+    router.refresh();
   }
 
   return (
     <main>
       <h1>ヒデ工房 勤怠・給与</h1>
-      <div className="card">
-        {state === "sent" ? (
-          <p>ログイン用のリンクをメールで送りました。メールを開いてリンクを押してください。</p>
-        ) : (
-          <form className="inline" onSubmit={send}>
-            <input type="email" required placeholder="メールアドレス" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <button className="primary" type="submit">ログイン用のリンクを送る</button>
-          </form>
-        )}
-        {state === "error" ? <p className="error">送れませんでした。登録済みのメールアドレスか確認してください。</p> : null}
-      </div>
+      <form className="card" onSubmit={login} style={{ display: "grid", gap: 12, maxWidth: 360 }}>
+        <input type="email" required autoComplete="username" placeholder="メールアドレス" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input type="password" required autoComplete="current-password" placeholder="パスワード" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <button className="primary" type="submit" disabled={pending}>ログイン</button>
+        {error ? <p className="error">ログインできませんでした。メールアドレスとパスワードを確かめてください。忘れたときは権限者に再発行を頼んでください。</p> : null}
+      </form>
     </main>
   );
 }
