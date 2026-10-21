@@ -8,12 +8,12 @@ insert into auth.users values
   ('00000000-0000-0000-0000-00000000000a'), ('00000000-0000-0000-0000-00000000000b'),
   ('00000000-0000-0000-0000-000000000001'), ('00000000-0000-0000-0000-000000000002');
 insert into auth.users values ('00000000-0000-0000-0000-00000000000c');
-insert into members (user_id, role, display_name, is_owner) values
-  ('00000000-0000-0000-0000-00000000000a', 'admin', '社長', true),
-  ('00000000-0000-0000-0000-00000000000c', 'admin', '社労士', false),
-  ('00000000-0000-0000-0000-00000000000b', 'accounting', '経理', false),
-  ('00000000-0000-0000-0000-000000000001', 'staff', 'スタッフ1', false),
-  ('00000000-0000-0000-0000-000000000002', 'staff', 'スタッフ2', false);
+insert into members (user_id, role, display_name) values
+  ('00000000-0000-0000-0000-00000000000a', 'admin', '社長'),
+  ('00000000-0000-0000-0000-00000000000c', 'admin', '社労士'),
+  ('00000000-0000-0000-0000-00000000000b', 'accounting', '経理'),
+  ('00000000-0000-0000-0000-000000000001', 'staff', 'スタッフ1'),
+  ('00000000-0000-0000-0000-000000000002', 'staff', 'スタッフ2');
 insert into employees (id, name, user_id, contract, pay_type) values
   ('10000000-0000-0000-0000-00000000000b', '経理', '00000000-0000-0000-0000-00000000000b', 'パート', '時給'),
   ('10000000-0000-0000-0000-000000000001', 'スタッフ1', '00000000-0000-0000-0000-000000000001', '正社員', '月給'),
@@ -96,16 +96,11 @@ select pg_temp.expect_error('確定済みの明細は権限者でも変更でき
 update payslips set note = '下書きは直せる' where run_id = '20000000-0000-0000-0000-000000000002';
 select pg_temp.expect('下書きの明細は直せる', (select count(*) from payslips where note is not null), 3);
 
--- ── 社長以外の権限者 ──
+-- ── 社長以外の権限者（社労士）も同じ権限 ──
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000c', false);
 select pg_temp.expect('社労士も全員の勤怠を見られる', (select count(*) from attendance_days), 4);
-select pg_temp.expect_error('社長以外は役割を付け替えられない',
-  $q$do $x$ begin update members set role = 'admin' where user_id = '00000000-0000-0000-0000-000000000001'; if not found then raise exception '更新0件'; end if; end $x$$q$);
-
--- ── 社長は役割を付け替えられる ──
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
 update members set role = 'accounting' where user_id = '00000000-0000-0000-0000-000000000002';
-select pg_temp.expect('社長は役割を付け替えられる', (select count(*) from members where role = 'accounting'), 2);
+select pg_temp.expect('権限者は役割を付け替えられる', (select count(*) from members where role = 'accounting'), 2);
 
 -- ── ログインしていない ──
 reset role;

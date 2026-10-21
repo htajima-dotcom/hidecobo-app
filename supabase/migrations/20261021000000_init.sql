@@ -5,7 +5,7 @@
 create extension if not exists pgcrypto;
 
 -- ───────── 役割 ─────────
--- admin      : 権限者（社長・社労士・会計士）。全員の情報を見られ、設定を変えられる
+-- admin      : 権限者（社長・社労士・会計士の3名）。全員の情報を見られ、設定や役割を変えられる
 -- accounting : 経理担当。本人の勤怠・給与と、確定した給与仕訳だけを見られる
 -- staff      : 社員・パート。本人の情報だけを見られる
 create type app_role as enum ('admin', 'accounting', 'staff');
@@ -14,7 +14,6 @@ create table public.members (
   user_id uuid primary key references auth.users (id) on delete cascade,
   role app_role not null default 'staff',
   display_name text not null,
-  is_owner boolean not null default false, -- 社長。役割の付け替えができるのはこの人だけ
   created_at timestamptz not null default now()
 );
 
@@ -155,11 +154,6 @@ create function public.is_accounting() returns boolean
   select coalesce(public.current_role_name() = 'accounting', false)
 $$;
 
-create function public.is_owner() returns boolean
-  language sql stable security definer set search_path = public as $$
-  select coalesce((select is_owner from public.members where user_id = auth.uid()), false)
-$$;
-
 create function public.my_employee_id() returns uuid
   language sql stable security definer set search_path = public as $$
   select id from public.employees where user_id = auth.uid()
@@ -183,17 +177,13 @@ alter table public.audit_log enable row level security;
 do $$
 declare t text;
 begin
-  foreach t in array array['employees', 'employment_terms', 'company_rules', 'rate_settings',
+  foreach t in array array['members', 'employees', 'employment_terms', 'company_rules', 'rate_settings',
                            'tax_tables', 'attendance_days', 'requests', 'payroll_runs', 'payslips',
                            'journal_entries']
   loop
     execute format('create policy admin_all on public.%I for all to authenticated using (public.is_admin()) with check (public.is_admin())', t);
   end loop;
 end $$;
--- 利用者と役割は権限者が見られるが、付け替えは社長だけ
-create policy admin_read on public.members for select to authenticated using (public.is_admin());
-create policy owner_write on public.members for all to authenticated
-  using (public.is_owner()) with check (public.is_owner());
 create policy admin_read on public.audit_log for select to authenticated using (public.is_admin());
 
 -- 本人の分
