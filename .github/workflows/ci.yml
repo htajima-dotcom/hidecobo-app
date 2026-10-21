@@ -27,6 +27,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: 画面のビルド
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
       - run: npm run typecheck
       # 実データの fixtures はリポジトリに無いため、Excelとの一致テストはローカルでのみ走る
       - run: npm test
