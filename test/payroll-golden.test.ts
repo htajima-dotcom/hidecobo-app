@@ -1,12 +1,16 @@
 // 既存Excel（社労士準拠版）の計算結果と、1円単位で一致することを確かめる。
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { calculatePayroll, type TaxTable } from "../src/payroll";
 
 const dir = join(__dirname, "..", "fixtures");
-const taxTables: Record<string, TaxTable> = JSON.parse(readFileSync(join(dir, "tax-tables.json"), "utf8"));
-const files = readdirSync(dir).filter((f) => f.startsWith("payroll-"));
+// 実データの fixtures が無い環境（CIなど）ではスキップする
+const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.startsWith("payroll-")) : [];
+
+const taxTables: Record<string, TaxTable> = files.length
+  ? JSON.parse(readFileSync(join(dir, "tax-tables.json"), "utf8"))
+  : {};
 
 describe.each(files)("%s", (file) => {
   const fx = JSON.parse(readFileSync(join(dir, file), "utf8"));
