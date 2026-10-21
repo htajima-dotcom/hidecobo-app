@@ -1,12 +1,13 @@
 // 既存Excelの各月の給与から作った給与仕訳が、貸借一致し、支給・控除の合計と合うことを確かめる。
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildPayrollJournal } from "../src/accounting";
 import { calculatePayroll, type TaxTable } from "../src/payroll";
 
 const dir = join(__dirname, "..", "fixtures");
-const files = readdirSync(dir).filter((f) => f.startsWith("payroll-"));
+// 実データの fixtures が無い環境（CIなど）ではスキップする
+const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.startsWith("payroll-")) : [];
 const taxTables: Record<string, TaxTable> = files.length
   ? JSON.parse(readFileSync(join(dir, "tax-tables.json"), "utf8"))
   : {};
